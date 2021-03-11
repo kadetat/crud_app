@@ -22,6 +22,15 @@ function formatPhoneNumber(phoneNumberString) {
     return phoneNumberString;
 }
 
+function stripPhoneNumber(phoneNumberString) {
+    let cleaned = phoneNumberString.replace(/\D/g, '');
+    let match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+        return match[1] + match[2] + match[3];
+    }
+    return phoneNumberString;
+}
+
 function getJSDateFromSQLDate(sqlDate) {
     // Strip non-digits
     let cleaned = sqlDate.replace(/\D/g, '');
@@ -106,6 +115,11 @@ let addItemButton = $('#addItem');
 addItemButton.on("click", showDialogAdd);
 
 function saveChanges() {
+    let validatedFirst = false;
+    let validatedLast = false;
+    let validatedPhone = false;
+    let validatedBirthdate = false;
+    let validatedEmail = false;
     console.log("SAVE CHANGES");
     let firstName = $('#firstName').val();
     //FirstName
@@ -113,9 +127,11 @@ function saveChanges() {
     if (reg.test(firstName)) {
         $('#firstName').removeClass("is-invalid");
         $('#firstName').addClass("is-valid");
+        validatedFirst = true;
     } else {
         $('#firstName').removeClass("is-valid");
         $('#firstName').addClass("is-invalid");
+        validatedFirst = false;
     }
     //LastName
     let lastName = $('#lastName').val();
@@ -123,31 +139,39 @@ function saveChanges() {
     if (regLast.test(lastName)) {
         $('#lastName').removeClass("is-invalid");
         $('#lastName').addClass("is-valid");
+        validatedLast = true;
     } else {
         $('#lastName').removeClass("is-valid");
         $('#lastName').addClass("is-invalid");
+        validatedLast = false;
     }
 
     //Email
     let email = $('#email').val();
-    let regEmail = /^\w+\@\w+\.\w+$/;
+    let regEmail = /^[\w\.]+\@[\w\.]+$/;
     if (regEmail.test(email)) {
         $('#email').removeClass("is-invalid");
         $('#email').addClass("is-valid");
+        validatedEmail = true;
     } else {
         $('#email').removeClass("is-valid");
         $('#email').addClass("is-invalid");
+        validatedEmail = false;
     }
 
     //Phone
     let phone = $('#phoneNumber').val();
-    let regPhone = /^[0-9]{10}$/;
+    let regPhone = /^[0-9]{3}-?[0-9]{3}-?[0-9]{4}$/;
     if (regPhone.test(phone)) {
         $('#phoneNumber').removeClass("is-invalid");
         $('#phoneNumber').addClass("is-valid");
+        validatedPhone = true;
+
     } else {
         $('#phoneNumber').removeClass("is-valid");
         $('#phoneNumber').addClass("is-invalid");
+        validatedPhone = false;
+
     }
 
     //Birth Date
@@ -157,11 +181,42 @@ function saveChanges() {
     if (regDate.test(birthDate)) {
         $('#birthdate').removeClass("is-invalid");
         $('#birthdate').addClass("is-valid");
+        validatedBirthdate = true;
+
     } else {
         $('#birthdate').removeClass("is-valid");
         $('#birthdate').addClass("is-invalid");
+        validatedBirthdate = false;
+
     }
 
+    if (validatedFirst && validatedLast && validatedEmail && validatedBirthdate && validatedPhone) {
+        let stripPhone = stripPhoneNumber(phone);
+        let dataToServer = {first  : firstName,
+                            last   : lastName,
+                            phone  : stripPhone,
+                            birthday : birthDate,
+                            email  : email};
+        console.log(dataToServer);
+        let url = "api/name_list_edit";
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: JSON.stringify(dataToServer),
+            success: function(dataFromServer) {
+                console.log(dataFromServer);
+                location.reload(true);
+                $('#id').val("");
+                $('#firstName').val("");
+                $('#lastName').val("");
+                $('#email').val("");
+                $('#phoneNumber').val("");
+                $('#birthdate').val("");
+            },
+            contentType: "application/json",
+            dataType: 'text', // Could be JSON or whatever too
+        });
+    }
 }
 
 let saveChangesButton = $('#saveChanges');
