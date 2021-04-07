@@ -68,12 +68,16 @@ function updateTable() {
                 "<td>" + htmlSafe(birthdayString) + "</td>" +
                 "<td>" + formatPhoneNumber(htmlSafe(json_result[i].phone)) + "</td>" +
                 "<td>" +
+                "<button type='button' name='edit' class='editButton btn btn-primary' value=" + json_result[i].id + "> Edit </button>" +
                 "<button type='button' name='delete' class='deleteButton btn btn-danger' value=" + json_result[i].id + "> Delete </button>" +
                 "</td></tr>");
 
         }
         let buttons = $(".deleteButton");
         buttons.on("click", deleteItem);
+
+        let buttons2 = $(".editButton");
+        buttons2.on("click", editItem);
         
         });
 
@@ -135,11 +139,12 @@ let addItemButton = $('#addItem');
 addItemButton.on("click", showDialogAdd);
 
 function saveChanges() {
-    let firstField = $('#firstName')
-    let lastField = $('#lastName')
-    let emailField = $('#email')
-    let phoneNumberField = $('#phoneNumber')
-    let birthdateField = $('#birthdate')
+    let id = $('#id').val();
+    let firstField = $('#firstName');
+    let lastField = $('#lastName');
+    let emailField = $('#email');
+    let phoneNumberField = $('#phoneNumber');
+    let birthdateField = $('#birthdate');
     let validatedFirst;
     let validatedLast;
     let validatedPhone;
@@ -217,11 +222,13 @@ function saveChanges() {
 
     if (validatedFirst && validatedLast && validatedEmail && validatedBirthdate && validatedPhone) {
         let stripPhone = stripPhoneNumber(phone);
-        let dataToServer = {first  : firstName,
+        let dataToServer = {id     : id,
+                            first  : firstName,
                             last   : lastName,
                             phone  : stripPhone,
                             birthday : birthDate,
                             email  : email};
+
         console.log(dataToServer);
         let url = "api/name_list_edit";
         $.ajax({
@@ -259,6 +266,54 @@ function saveChanges() {
 
 let saveChangesButton = $('#saveChanges');
 saveChangesButton.on("click", saveChanges);
+
+function editItem(e) {
+    console.log("Edit");
+
+    let id = e.target.value;
+
+    let first = e.target.parentNode.parentNode.querySelectorAll("td")[1].innerHTML;
+    // repeat line above for all the fields we need
+    let last = e.target.parentNode.parentNode.querySelectorAll("td")[2].innerHTML;
+    let email = e.target.parentNode.parentNode.querySelectorAll("td")[3].innerHTML;
+    let bday = e.target.parentNode.parentNode.querySelectorAll("td")[4].innerHTML;
+    let phone = e.target.parentNode.parentNode.querySelectorAll("td")[5].innerHTML;
+
+    // console.log("id: " + id);
+    // console.log("first: " + first);
+    // console.log("last: " + last);
+    // console.log("email: " + email);
+    // console.log("bday: " + bday);
+    // console.log("phone: " + phone);
+
+    $('#id').val(id); // Yes, now we set and use the hidden ID field
+    $('#firstName').val(first);
+    $('#lastName').val(last);
+    $('#email').val(email);
+
+
+    // Regular expression to match phone number pattern:
+    // (515) 555-1212
+    let regexp = /\((\d{3})\) (\d{3})-(\d{4})/;
+    let match = phone.match(regexp);
+    // We how have a list, 1-3, where each one is part of the phone number.
+// Reformat into 515-555-1212
+    let phoneString = match[1] + '-' + match[2] + '-' + match[3];
+    $('#phoneNumber').val(phoneString);
+
+    // Parse date to current time in milliseconds
+    let timestamp = Date.parse(bday);
+    // Made date object out of that time
+    let dateObject = new Date(timestamp);
+    // Convert to a full ISO formatted string
+    let fullDateString = dateObject.toISOString();
+    // Trim off the time part
+    let shortDateString = fullDateString.split('T')[0];
+    $('#birthdate').val(shortDateString);
+
+    // Show the window
+    $('#myModal').modal('show');
+}
 
 
 function deleteItem(e) {

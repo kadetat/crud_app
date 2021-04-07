@@ -20,6 +20,8 @@ public class NameListEdit extends HttpServlet {
     private Pattern phoneValidationPattern;
     private Pattern emailValidationPattern;
     private Pattern birthdayValidationPattern;
+    private Pattern idValidationPattern;
+
 
     /**
      * Our constructor
@@ -31,6 +33,8 @@ public class NameListEdit extends HttpServlet {
         phoneValidationPattern = Pattern.compile("^[0-9]{3}-?[0-9]{3}-?[0-9]{4}$");
         emailValidationPattern = Pattern.compile("^[\\w.]+@[\\w.]+$");
         birthdayValidationPattern = Pattern.compile("^[0-9]{4}-[0-9]{2}-[0-9]{2}$");
+        idValidationPattern = Pattern.compile("^[0-9]{0,10}$");
+
     }
 
     @Override
@@ -55,6 +59,13 @@ public class NameListEdit extends HttpServlet {
         // names have to match. That's the magic.
         Jsonb jsonb = JsonbBuilder.create();
         Person formTestObject = jsonb.fromJson(requestString, Person.class);
+
+        Matcher mid = idValidationPattern.matcher(formTestObject.getId());
+
+        if (!mid.find()) {
+            out.println("{\"error\" : \"Error validating ID.\"}");
+            return;
+        }
 
         Matcher mFirst = firstValidationPattern.matcher(formTestObject.getFirst());
 
@@ -91,6 +102,11 @@ public class NameListEdit extends HttpServlet {
             return;
         }
 
+        if (formTestObject.getId().equals("")){
+            PersonDAO.addPerson(formTestObject);
+        }else {
+            PersonDAO.updatePerson(formTestObject);
+        }
         // If we made it this far we have success.
         out.println("{\"success\": \"Successful insert.\"}");
 
@@ -99,7 +115,8 @@ public class NameListEdit extends HttpServlet {
         // out.println("Received Object");
 
         // Use our DAO to get a list of people
-        PersonDAO.addPerson(formTestObject);
+
+
 
     }
 }
